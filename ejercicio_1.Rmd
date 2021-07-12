@@ -1,0 +1,204 @@
+---
+title: "Tarea"
+author: "Grupo 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+load("C:/Users/HESHER/Desktop/PROGRA2/ProgramacionR-master/data/data.RData")
+```
+
+# EJERCICIOS PARTE 1
+
+Cargar las variables almacenadas en el siguiente archivo [Rdata](https://goo.gl/uDzU8v)
+
+### 1. Calcula los valores numéricos aproximados de:
+a) $\frac{0.3 \cdot 0.15}{0.3 \cdot 0.15 + 0.2 \cdot 0.8 + 0.5 \cdot 0.12}$
+```{r}
+a<- (0.3*0.5)/(0.3*0.15+0.2*0.8+0.5*0.12)
+a 
+```
+b) $\frac{5^6}{6!} e^{-5}$
+```{r}
+b<-(exp(-5)*5**6)/factorial(6)
+b
+```
+c) $\begin{pmatrix} 20 \\ 7 \end{pmatrix} 0.4^7  0.6^{13}$
+```{r}
+c<-choose(20,7)*(0.4**7)*(0.6**13)
+c
+```
+### 2. Realizar la siguiente suma
+a) $1+2+3+...+1000$
+```{r}
+sum(1:1000)
+```
+b) $1+2+4+8+16+...+1024$
+```{r}
+sum(seq(2,1024,2))       #Creamos una secuencia cada "2" y sumamos
+```
+### 3. El vector  `grupo` representa el grupo al que pertenece una serie de alumnos
+a) ¿Cuántos elementos tiene?
+```{r}
+tibble(grupo) %>%            #Cantidad de datos
+  count()
+```
+b) ¿En qué posiciones del vector está la letra "A"?
+```{r}
+tibble(grupo) %>% 
+  mutate(orden = 1:n(), grupo = grupo) %>% #Agregamos una columna de posicion
+  filter(grupo == "A")                     #Filtramos solo "A"
+```
+### 4. El vector `nota` representa la nota de un examen de los alumnos que están en los grupos del vector `grupo`.
+a) ¿Cuanto suman todas las notas?
+```{r}
+sum(nota)                            #Sumamos las notas
+```
+b) ¿Cual es la media aritmética de todas las notas?
+```{r}
+median(nota)                         #Media de las notas
+```
+c) ¿En qué posiciones están las notas mayores de *7.0*?
+```{r}
+tibble(nota) %>% 
+  mutate(orden = 1:n() , nota =nota) %>% #Agregamos una columna de posicion
+  filter(nota>7)                         #Notas mayores de "7"
+```
+d) Visualiza las notas ordenadas de mayor a menor
+```{r}
+tibble(grupo,nota) %>%                   #Unimos "Grupo" y "Nota"
+  arrange(nota) %>%                     #Ordenamos de mmenor a mayor NOTAS
+  mutate(Orden = 1:n())                 #Agregamos posicion
+```
+e) ¿En qué posición está la nota máxima?
+```{r}
+tibble(nota) %>% 
+  mutate(orden = 1:n() , nota =nota) %>%   #Agregamos posicion
+  slice_max(nota)                         #Seleccionamos la maxima "Nota"
+```
+
+### 5. A partir de los vectores `grupo` y `nota` definidos.
+a) Suma las notas de los 10 primeros alumnos del vector
+```{r}
+sum(nota[1:10])                             #Sumamos los primeros 10
+```
+b) ¿Cuántos alumnos hay del grupo *C*?
+```{r}
+tibble(grupo) %>% 
+  filter(grupo == "C") %>%                 #Filtramos solo "C"
+  count()                                  #Contamos
+```
+c) ¿Cuántos alumnos han aprobado?
+```{r}
+tibble(nota) %>% 
+  filter(nota >= 5.1) %>%                 #Filtramos solo "C"
+  count()                                  #Contamos
+```
+d) ¿Cuántos alumnos del grupo *B* han aprobado?
+```{r}
+tibble(grupo, nota) %>% 
+  filter(nota >= 5.1 ,grupo == "B") %>%   #Filtramos Aprobado y solo "B"
+  count() 
+```
+
+e) ¿Qué porcentaje de alumnos del grupo *C* han aprobado?
+```{r}
+(tibble(grupo, nota) %>%
+  filter(nota >= 5.1 ,grupo == "C") %>%   #Filtramos Aprobado y solo "B"
+  count()/tibble(grupo) %>%
+  filter(grupo == "C") %>%   #Filtramos solo "C"
+  count())*100
+
+```
+f) ¿De qué grupos son la máxima y mínima notas de toda la muestra?
+```{r}
+tibble(grupo,nota) %>%    
+  slice_max(nota)      #Maxima nota
+```
+```{r}
+tibble(grupo,nota) %>%    
+  slice_min(nota)      #Minima nota
+```
+g) Nota media de los alumnos de grupo *A* y *B*, juntos, considerando sólo a los que han aprobado.
+```{r}
+tibble(grupo, nota) %>% 
+  filter(grupo == "A" & nota > 5|         #Grupo A y Aprobado
+         grupo == "B" & nota > 5) %>%     #Grupo B y Aprobado
+  summarise(mean(nota))                   #Media
+```
+### 6. Calcula el percentil 66 de las notas de todos los alumnos, y también de los alumnos del grupo C.
+```{r}
+quantile(nota, c(0.66))    #Percentil 66
+```
+```{r}
+tibble(grupo, nota) %>% 
+  filter(grupo == "C") %>%       #Filtramos solo C
+  summarise(quantile(nota, c(0.66)))  #Percentil 66
+
+```
+### 7. Un alumno tiene una nota de 4.9. ¿Qué porcentaje, del total de alumnos, tiene una nota menor o igual que la suya? ¿Y qué porcentaje tiene una nota mayor o igual que la suya?
+```{r}
+(tibble(nota) %>%
+  filter(nota <= 4.9) %>%   #Filtramos Nota menor a 4.9
+  count()/tibble(grupo) %>%
+  count())*100   
+```
+```{r}
+(tibble(nota) %>%
+  filter(nota >= 4.9) %>%   #Filtramos Nota mayor a 4.9
+  count()/tibble(grupo) %>%
+  count())*100  
+```
+### 8. Realiza el gráfico de diagramas de caja de las notas de cada grupo, para poder comparar el nivel de cada uno de ellos.
+```{r}
+df<- tibble(grupo,nota)
+boxplot(`nota` ~ `grupo`,df, col = palette(rainbow(4)))
+```
+
+### 9. Si la variable `conc` recoge la concentración de plomo (en ppm) en el aire de cierta zona durante un día completo.
+
+a) ¿Cuál ha sido la concentración máxima?
+```{r}
+tibble(conc) %>% 
+  slice_max(conc)
+```
+b) ¿En cuántos de los muestreos se ha superado la concentración de 40.0 ppm?
+```{r}
+tibble(conc) %>% 
+  filter(conc > 40) %>% 
+  count()
+```
+c) ¿Cuál ha sido la concentración media del día?
+```{r}
+tibble(conc) %>% 
+  summarise(median(conc))
+```
+d) ¿Cuáles fueron las 10 mediciones más bajas del día?
+```{r}
+tibble(conc) %>%                   #Unimos "Grupo" y "Nota"
+  arrange(conc)
+```
+e) Si la primera medida fue a las 00:00. ¿A qué hora del día se alcanzó la concentración máxima?
+```{r}
+Hora<- seq(0,24-1/12,1/12)
+length(Hora)
+tibble(Hora,conc) %>%
+  slice_max(conc)
+#seq(as.double())
+#seq(as.POSIXct("2020-01-01 00:00"),as.POSIXct("2020-01-01 23:00"),by=" min")
+#seq(as.POSIXct("2020-01-01 00:00"),as.POSIXct("2020-01-01 24:00"),by = "1/12 min")
+
+#seq(as.POSIXct("2020-01-01 00:00"),as.POSIXct("2020-01-01 24:00"),by="1/12 min")
+
+```
+```{r}
+length(conc)
+tiempo_recojo <- 23/length(conc) #tiempo de recojo de cada concentracion
+which(conc == max(conc)) #ocupacion dd la maxima concentracion
+produc <- tiempo_recojo * which(conc == max(conc))
+produc
+```
+
+

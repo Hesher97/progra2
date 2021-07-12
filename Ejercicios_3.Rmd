@@ -1,0 +1,124 @@
+---
+title: "Ejercicios3"
+author: "Grupo 2"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+
+estaciones<-read.csv("https://raw.githubusercontent.com/Hesher97/progra2/master/raingaugeDataset.csv")
+codigos<-read.csv("https://raw.githubusercontent.com/Hesher97/progra2/master/listRaingauge.csv")
+```
+
+# Ejercicios Parte 3
+## 15. Manipule los dataframe según se solicite
+Se tiene el conjuntos de datos de precipitación diaria (período 1980 - 2013) de ciertas estaciones meteorológicas (**raingaugeDataset.csv**), donde cada una de estas están asociadas a un código único (**p.e. qc00000208**). Asimismo, se tiene una lista con los nombres, códigos, coordenadas y elevación de cada una de las estaciones (**listRaingauge.csv**).
+A cada grupo le corresponde la siguiente estación:
+
+- **Grupo 01**: MALLARES
+- **Grupo 02**: TABACONAS
+- **Grupo 03**: PUERTO PIZARRO
+- **Grupo 04**: MORROPON
+- **Grupo 05**: SAN MIGUEL
+- **Grupo 06**: CHULUCANAS
+- **Grupo 07**: LAMBAYEQUE
+- **Grupo 08**: EL LIMON
+- **Grupo 09**: EL SALTO
+- **Grupo 10**: CHUSIS
+
+De lo descrito anteriormente, se solicita:
+```{r}
+#Ubicamos en codigo de la ESTACION
+codigo<-codigos[codigos$NOM_EST=="TABACONAS",]
+codigo_n<-codigo[,"CODIGO"]
+```
+```{r, echo= T}
+#Código de estacion de trabajo
+codigo_n
+```
+
+```{r}
+#Generamos vectores por el codigo de la estacion y le damos formato a la fecha
+estacion<-estaciones[,codigo_n]
+fecha<-estaciones[,"date"]
+fecha2<-lubridate::dmy(fecha)
+#Creamo un data frame con ambos vectores
+  df1<-data.frame(fecha2,estacion)
+```
+```{r, echo=TRUE}
+#Seleccionamosla estacion
+tibble(df1)
+```
+```{r}
+#Verificamos los datos
+seq(as.Date("1980-01-01"),as.Date("2013-12-31"), by = "day") %>% 
+  length()
+```
+
+** *
+a) Determine la cantidad de **missing values** de la serie de tiempo a paso diario.
+```{r, echo=TRUE}
+missvaluedaily<-df1 %>% 
+  group_by(fecha2=str_sub(fecha2,1,10)) %>% 
+  mutate(missval=sum(is.na(estacion))) # Cantidad "NA" en cada dia
+summarise_all(df1, funs(sum(is.na(.)))) #Total de "NA" en la estacion por dia 
+```
+b) Calcule la serie de tiempo de precipitación **acumulada mensual** (si el # de días con missing values, en un mes, supera el 10%, la precipitación acumulada mensual será considerado como un **`NA`**).
+```{r}
+ppm<-
+  df1 %>% 
+  group_by(fecha2=str_sub(fecha2,1,7)) %>% #porcentaje de DATOS faltantes
+  mutate(
+    missval=sum(is.na(estacion)) * 100 / n()
+  ) %>% #Precipitacion acumulada mensual
+  summarize(
+    estacion=sum(estacion,na.rm=T),
+    missval=unique(missval)
+  ) %>% 
+  mutate(
+    estacion=ifelse(missval>=10,NA,estacion),#NA, cuando superan o son mayor a 10%
+    fecha2 = as.Date(sprintf("%1$s-01",fecha2)),
+    month=str_sub(fecha2,6,7)
+  )
+ppm
+```
+c) Determine la cantidad de **missing values** de la serie de tiempo a paso mensual.
+```{r}
+sum(summarise_all(ppm, funs(sum(is.na(.)))))
+```
+d) Cree una función que calcule, a partir de los datos de preicpitación mensual, la **climatología (Ene-Dic)** para el **período 1980-2010**.
+```{r}
+ppM10<- tibble(df1) %>% 
+  select(fecha2, estacion) %>%   #Seleccionamos
+  mutate(date = as.Date(fecha2, format = "%d/%m/%Y")) %>% 
+  rename(Fecha = date, pp = estacion) %>%   #Renombramos
+  filter(Fecha>="1980-01-01",Fecha<="2010-12-31") %>%   #SOLO de 1980 a 2010
+  group_by(Fecha = str_sub(Fecha,1,7)) %>%   #Agrupamos  por Año y Mes
+  mutate(
+    missVal = sum(is.na(pp))*100/n()    #porcentaje de DATOS faltantes
+  ) %>% 
+  summarise(
+    pp = sum(pp, na.rm = T),
+    missVal = unique(missVal)          #Precipitacion acumulada
+  ) %>% 
+  mutate(
+    pp = ifelse(missVal>=10,NA,pp),    #NA, cuando superan o son mayor a 10%
+    Fecha = as.Date(sprintf("%1$s-01", Fecha)),
+    Mes = str_sub(Fecha, 6, 7)
+  )
+ggplot(ppM10, aes(Fecha,pp))+
+  geom_line()
+```
+e) Plotear (boxplot) la variabilidad de los valores mensuales (Ene-Dic) para el período 1980-2013.
+```{r}
+ggplot(ppm, aes(month,estacion))+
+  geom_boxplot()+
+  theme_bw()+
+  scale_x_discrete(
+    labels=month.abb
+  )
+```
+
